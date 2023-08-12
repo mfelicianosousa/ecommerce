@@ -17,7 +17,7 @@
     <link href='http://fonts.googleapis.com/css?family=Raleway:400,100' rel='stylesheet' type='text/css'>
 
     <!-- Bootstrap -->
-    <link rel="stylesheet" href=/resources/site/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/resources/site/css/bootstrap.min.css">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="/resources/site/css/font-awesome.min.css">
