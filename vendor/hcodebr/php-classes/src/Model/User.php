@@ -4,11 +4,33 @@ namespace Hcode\Model;
 
 use Hcode\DB\sql;
 use Hcode\Model;
+use Hcode\Mailer;
 
 class User extends Model
 {
     const SESSION = 'User';
     const SECRET = "<secret>";
+    const SECRET_IV = "HcodePhp7_Secret_IV";
+	const ERROR = "UserError";
+	const ERROR_REGISTER = "UserErrorRegister";
+	const SUCCESS = "UserSucesss";
+
+
+    public static function getFromSession()
+	{
+
+		$user = new User();
+
+		if (isset($_SESSION[User::SESSION]) && (int)$_SESSION[User::SESSION]['iduser'] > 0) {
+
+			$user->setData($_SESSION[User::SESSION]);
+
+		}
+
+		return $user;
+
+	}
+
 
     public static function login($login, $password)
     {
@@ -65,6 +87,7 @@ class User extends Model
     public function save(){
 
         $sql = new Sql();
+        
         $results = $sql->select("CALL sp_users_save(:desperson, :deslogin, :despassword, :desemail, :nrphone, :inadmin)", array(
          ":desperson"=> $this->getdesperson(),
          ":deslogin"=> $this->getdeslogin(),
@@ -74,9 +97,6 @@ class User extends Model
          ":inadmin"=> $this->getinadmin()    
         ));
         $this->setData( $results[0] );
-
-
-
     }
 
     public function get($iduser){
@@ -150,14 +170,9 @@ class User extends Model
 
                 $dataRecovery = $results2[0];
 
-                //$message = User::SECRET.$dataRecovery["idrecovery"];
-                $message = $dataRecovery["idrecovery"];
+                $code = openssl_encrypt($dataRecovery['idrecovery'], 'AES-128-CBC', pack("a16", User::SECRET), 0, pack("a16", User::SECRET_IV));
 
-
-                //$code = base64_encode( mcrypt_encrypt(MCRYPT_RIJNDAEL_128, User::SECRET, $dataRecovery["idrecovery"], MCRYPT_MODE_ECB));
-                
-                $code = sodium_encrypt($message);
-  
+				$code = base64_encode($code);
 
                 $link = "http://www.mfsecommerce.com.br/admin/forgot/reset?code=$code";
                 
@@ -174,34 +189,15 @@ class User extends Model
 
     }
 
-    
-    public function sodium_encrypt($message){
-
-        $key = random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
-        $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-
-        $ciphertext = sodium_crypto_secretbox($message, $nonce, $key);
-
-        return  base64_encode($ciphertext);
-    }
-
-    public function sodium_decrypt($cyphertext, $nonce, $key){
-
-        $ciphertextBase64 = base64_encode($cyphertext);
-        $nonceBase64 = base64_encode($nonce);
-        $plaintext2 = sodium_crypto_secretbox_open(
-            base64_decode($ciphertextBase64), base64_decode($nonceBase64), $key
-        );
-        return $plaintext2;
-    }
       
-    public static function validForgotDecrypt($code){
+    public static function validForgotDecrypt( $code ){
 
+        $code = base64_decode( $code );
+
+		$idrecovery = openssl_decrypt($code, 'AES-128-CBC', pack("a16", User::SECRET), 0, pack("a16", User::SECRET_IV));
+        $sql = new Sql();
        
-       $idrecorevy= mcrypt_decrypt(MCRYPT_RIJNDAEL_128, User::SECRET,  base64_decode($code), MCRYPT_MODE_ECB);
-       $sql = new Sql();
-       
-       $results = $sql->select("
+        $results = $sql->select("
             SELECT * FROM tb_userspasswordsrecoveries a
             INNER JOIN tb_users b USGING (iduser)
             INNER JOIN tb_persons c USING(idperson)
@@ -211,17 +207,19 @@ class User extends Model
             a.dtrecovery IS NULL
             AND
             DATE_ADD(a.dtregister, INTERVAL 1 HOUR) >= NOW();
-       ", array(
-            ":idrecovery"=>$idrecorevy
-       ));
+        ", array(
+            ":idrecovery"=>$idrecovery
+        ));
 
-       if (count($results) ===0 ){
+        if (count($results) ===0 ){
 
             throw new \Exception("Não foi possivel recuperar a senha.");
 
        }
        else {
-        return $results[0];
+
+            return $results[0];
+       
        }
                 
     }
