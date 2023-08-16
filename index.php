@@ -4,11 +4,11 @@ session_start();
 
 require_once 'vendor/autoload.php';
 
-use Slim\Slim;
+use Hcode\Model\Category;
+use Hcode\Model\User;
 use Hcode\Page;
 use Hcode\PageAdmin;
-use Hcode\Model\User;
-use Hcode\Model\Category;
+use Slim\Slim;
 
 $app = new Slim();
 
@@ -73,26 +73,25 @@ $app->get('/admin/users/create', function () {
 $app->get('/admin/users/:iduser/delete', function ($iduser) {
     User::verifyLogin();
 
-	$user = new User();
-	$user->get((int)$iduser);
-	$user->delete();
-	header('Location: /admin/users');
+    $user = new User();
+    $user->get((int) $iduser);
+    $user->delete();
+    header('Location: /admin/users');
     exit;
-
 });
 
 // rotas para editar o usuário
 $app->get('/admin/users/:iduser', function ($iduser) {
     User::verifyLogin();
 
-	$user = new User();
+    $user = new User();
 
-	$user->get((int) $iduser);
+    $user->get((int) $iduser);
 
     $page = new PageAdmin();
-    $page->setTpl('users-update', array(
-		'user' => $user->getValues()
-	));
+    $page->setTpl('users-update', [
+        'user' => $user->getValues(),
+    ]);
 });
 
 $app->post('/admin/users/create', function () {
@@ -100,24 +99,23 @@ $app->post('/admin/users/create', function () {
 
     // var_dump($_POST);
     $user = new User();
-	$_POST["inadmin"] = (isset($_POST["inadmin"]))?1:0;
+    $_POST['inadmin'] = (isset($_POST['inadmin'])) ? 1 : 0;
     $user->setData($_POST);
     $user->save();
-	header('Location: /admin/users');
+    header('Location: /admin/users');
     exit;
 });
 
 $app->post('/admin/users/:iduser', function ($iduser) {
     User::verifyLogin();
 
-	$user = new User();
-	$_POST["inadmin"] = (isset($_POST["inadmin"]))?1:0;
-	$user->get((int)$iduser);
-	$user->setData($_POST);
-	$user->update();
-	header('Location: /admin/users');
+    $user = new User();
+    $_POST['inadmin'] = (isset($_POST['inadmin'])) ? 1 : 0;
+    $user->get((int) $iduser);
+    $user->setData($_POST);
+    $user->update();
+    header('Location: /admin/users');
     exit;
-
 });
 
 $app->get('/admin/forgot', function () {
@@ -129,51 +127,44 @@ $app->get('/admin/forgot', function () {
     $page->setTpl('forgot');
 });
 
-$app->post("/admin/forgot", function(){
+$app->post('/admin/forgot', function () {
+    $user = User::getForgot($_POST['email']);
 
-
-    $user = User::getForgot( $_POST["email"] );
-
-    header("Location: /admin/forgot/sent");
+    header('Location: /admin/forgot/sent');
     exit;
-
 });
 
-$app->post("/admin/forgot/sent", function(){
+$app->post('/admin/forgot/sent', function () {
     $page = new PageAdmin([
         'header' => false,
         'footer' => false,
     ]);
 
     $page->setTpl('forgot-sent');
-
 });
 
-$app->get("/admin/forgot/reset", function(){
-
-    $user = User::validForgotDecrypt($_GET["code"]);
+$app->get('/admin/forgot/reset', function () {
+    $user = User::validForgotDecrypt($_GET['code']);
     $page = new PageAdmin([
         'header' => false,
         'footer' => false,
     ]);
 
-    $page->setTpl('forgot-reset', array(
-        "name"=>$user["desperson"],
-        "code"=>$_GET[""]
-    ));
-
+    $page->setTpl('forgot-reset', [
+        'name' => $user['desperson'],
+        'code' => $_GET[''],
+    ]);
 });
 
-$app->post("/admin/forgot/reset", function(){
+$app->post('/admin/forgot/reset', function () {
+    $forgot = User::validForgotDecrypt($_POST['code']);
 
-    $forgot = User::validForgotDecrypt($_POST["code"]);
-
-    User::setForgotUsed($forgot["idrecorery"]);
+    User::setForgotUsed($forgot['idrecorery']);
 
     $user = new User();
-    $user->get((int)$forgot["iduser"]);
-    $password = password_hash($_POST["password"],PASSWORD_DEFAULT,[
-            "cost" => 12]);
+    $user->get((int) $forgot['iduser']);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT, [
+            'cost' => 12]);
     $user->setPassword($password);
 
     $page = new PageAdmin([
@@ -182,44 +173,36 @@ $app->post("/admin/forgot/reset", function(){
     ]);
 
     $page->setTpl('forgot-reset-success');
-;
 });
 
 $app->get('/admin/categories/:idcategory/delete', function ($idcategory) {
-   
     User::verifyLogin();
 
-	$category = new Category();
-	$category->get((int)$idcategory);
-	$category->delete();
-	header('Location: /admin/categories');
+    $category = new Category();
+    $category->get((int) $idcategory);
+    $category->delete();
+    header('Location: /admin/categories');
     exit;
-
 });
 
-$app->get("/admin/categories", function(){
-
+$app->get('/admin/categories', function () {
     User::verifyLogin();
-    
+
     $categories = Category::listAll();
     $page = new PageAdmin();
 
-    $page->setTpl("categories",[
-        'categories'=>$categories
+    $page->setTpl('categories', [
+        'categories' => $categories,
     ]);
-
 });
-$app->get("/admin/categories/create", function(){
-
+$app->get('/admin/categories/create', function () {
     User::verifyLogin();
 
     $page = new PageAdmin();
-    $page->setTpl("categories-create");
-
+    $page->setTpl('categories-create');
 });
 
-$app->post("/admin/categories/create", function(){
-
+$app->post('/admin/categories/create', function () {
     User::verifyLogin();
 
     $category = new Category();
@@ -227,21 +210,20 @@ $app->post("/admin/categories/create", function(){
     $category->setData($_POST);
     $category->save();
 
-    header("Location: /admin/categories");
+    header('Location: /admin/categories');
     exit;
-  
 });
 
 $app->get('/admin/categories/:idcategory', function ($idcategory) {
     User::verifyLogin();
 
     $category = new Category();
-	// $_POST["inadmin"] = (isset($_POST["inadmin"]))?1:0;
-	$category->get((int)$idcategory);
+    // $_POST["inadmin"] = (isset($_POST["inadmin"]))?1:0;
+    $category->get((int) $idcategory);
 
     $page = new PageAdmin();
-    $page->setTpl("categories-update",[
-        'category'=>$category->getValues()
+    $page->setTpl('categories-update', [
+        'category' => $category->getValues(),
     ]);
 });
 
@@ -249,13 +231,23 @@ $app->post('/admin/categories/:idcategory', function ($idcategory) {
     User::verifyLogin();
 
     $category = new Category();
-	// $_POST["inadmin"] = (isset($_POST["inadmin"]))?1:0;
-	$category->get((int)$idcategory);
+    $category->get((int) $idcategory);
 
     $category->setData($_POST);
-	$category->save();
-	header('Location: /admin/categories');
+    $category->save();
+    header('Location: /admin/categories');
     exit;
+});
+
+$app->get('/categories/:idcategory', function ($idcategory) {
+    $category = new Category();
+    $category->get((int) $idcategory);
+
+    $page = new Page();
+    $page->setTpl('category', [
+        'category' => $category->getValues(),
+        'products' => [],
+    ]);
 });
 
 $app->run();
