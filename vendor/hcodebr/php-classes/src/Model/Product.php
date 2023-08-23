@@ -14,6 +14,20 @@ class Product extends Model
         return $sql->select('SELECT * FROM tb_products ORDER BY desproduct');
     }
 
+    // cria á variavel virtual desphoto
+    public static function checkList($list)
+    {
+        foreach ($list as &$row) {
+            $product_new = new Product();
+            $product_new->setData($row);
+            $row = $product_new->getValues();
+        }
+
+        return $list;
+    }
+
+    
+
     public function save()
     {
         $sql = new Sql();
@@ -55,15 +69,15 @@ class Product extends Model
     {
         if (file_exists(
             $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.
-            'res'.DIRECTORY_SEPARATOR.
+            'resources'.DIRECTORY_SEPARATOR.
             'site'.DIRECTORY_SEPARATOR.
             'img'.DIRECTORY_SEPARATOR.
             'products'.DIRECTORY_SEPARATOR.
             $this->getidproduct().'.jpg'
         )) {
-            $url = '/res/site/img/products/'.$this->getidproduct().'.jpg';
+            $url = '/resources/site/img/products/'.$this->getidproduct().'.jpg';
         } else {
-            $url = '/res/site/img/product.jpg';
+            $url = '/resources/site/img/product.jpg';
         }
 
         return $this->setdesphoto($url);
@@ -88,22 +102,24 @@ class Product extends Model
             case 'jpeg':
                 $image = imagecreatefromjpeg($file['tmp_name']);
                 break;
+
             case 'gif':
                 $image = imagecreatefromgif($file['tmp_name']);
                 break;
+
             case 'png':
                 $image = imagecreatefrompng($file['tmp_name']);
                 break;
         }
 
-        $dest = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.
-        'resources'.DIRECTORY_SEPARATOR.
-        'site'.DIRECTORY_SEPARATOR.
-        'img'.DIRECTORY_SEPARATOR.
-        'products'.DIRECTORY_SEPARATOR.
-        $this->getidproducts().'.jpg';
+        $dist = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.
+            'resources'.DIRECTORY_SEPARATOR.
+            'site'.DIRECTORY_SEPARATOR.
+            'img'.DIRECTORY_SEPARATOR.
+            'products'.DIRECTORY_SEPARATOR.
+            $this->getidproduct().'.jpg';
 
-        imagejpeg($image, $dest);
+        imagejpeg($image, $dist);
 
         imagedestroy($image);
 
